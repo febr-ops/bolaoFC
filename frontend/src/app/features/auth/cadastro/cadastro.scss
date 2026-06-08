@@ -1,0 +1,118 @@
+/* Copie exatamente o mesmo conteúdo do arquivo login.scss atualizado aqui para manter a identidade */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #121214 0%, #1a1a1e 100%);
+  padding: 20px;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.login-card {
+  background: #202024;
+  padding: 40px 30px;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  border: 1px solid #29292e;
+}
+
+.logo-area {
+  text-align: center;
+  margin-bottom: 35px;
+
+  h1 {
+    font-size: 2.5rem;
+    margin: 0;
+    font-weight: 800;
+    letter-spacing: 1px;
+
+    .brand-blue {
+      color: #38b6ff;
+    }
+
+    .brand-green {
+      color: #00b37e;
+    }
+  }
+
+  p {
+    color: #a8a8b3;
+    font-size: 0.9rem;
+    margin-top: 8px;
+  }
+}
+
+.login-form {
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+
+    label {
+      color: #e1e1e6;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    input {
+      background: #121214;
+      border: 1px solid #29292e;
+      padding: 14px;
+      border-radius: 6px;
+      color: #ffffff;
+      font-size: 1rem;
+      transition: border-color 0.2s;
+
+      &:focus {
+        outline: none;
+        border-color: #00b37e;
+      }
+
+      &::placeholder {
+        color: #7c7c8a;
+      }
+    }
+  }
+}
+
+.btn-primary {
+  width: 100%;
+  background: #00b37e;
+  color: #ffffff;
+  border: none;
+  padding: 14px;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 10px;
+
+  &:hover {
+    background: #00875f;
+  }
+}
+
+.login-footer {
+  text-align: center;
+  margin-top: 25px;
+
+  p {
+    color: #a8a8b3;
+    font-size: 0.9rem;
+
+    a {
+      color: #00b37e;
+      text-decoration: none;
+      font-weight: bold;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+}

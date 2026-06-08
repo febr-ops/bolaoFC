@@ -1,0 +1,78 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "binary"
+}
+
+model User {
+  id            String        @id @default(uuid())
+  name          String
+  email         String        @unique
+  password      String
+  points        Int           @default(0)
+  role          String        @default("USER") // <- ADICIONE ESTA LINHA AQUI!
+  createdAt     DateTime      @default(now())
+  
+  // Relacionamentos
+  guesses       Guess[]
+  scorerGuesses ScorerGuess[]
+}
+
+model Match {
+  id         String   @id @default(uuid())
+  teamA      String
+  teamB      String
+  group      String   // Ex: "A", "B"
+  date       DateTime // Data e hora do jogo
+  status     String   // "SCHEDULED", "LIVE", "FINISHED"
+  scoreA     Int?     // Nulo até o jogo começar/acontecer
+  scoreB     Int?
+  
+  // Relacionamentos
+  goals         Goal[]
+  guesses       Guess[]
+  scorerGuesses ScorerGuess[]
+}
+
+model Goal {
+  id        String   @id @default(uuid())
+  matchId   String
+  player    String   // Nome do jogador que fez o gol
+  team      String   // Qual time fez o gol
+  minute    Int      // Minuto do gol
+
+  match     Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+}
+
+model Guess {
+  id        String   @id @default(uuid())
+  userId    String
+  matchId   String
+  guessA    Int      // Palpite de gols do Time A
+  guessB    Int      // Palpite de gols do Time B
+  pointsWon Int      @default(0) // Quantos pontos esse palpite rendeu pós-jogo
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match     Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, matchId]) // Garante que o usuário só tenha 1 palpite por jogo
+}
+
+model ScorerGuess {
+  id        String   @id @default(uuid())
+  userId    String
+  matchId   String
+  playerName String  // Nome do jogador apostado para fazer gol
+  pointsWon Int      @default(0)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match     Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, matchId]) // 1 palpite de artilheiro por jogo
+}
