@@ -1,16 +1,13 @@
 {
-  "version": 2,
-  "rewrites": [
-    { "source": "/_/backend/(.*)", "destination": "/api/$1" }
-  ],
-  "monorepo": {
-    "frontend": {
-      "root": "frontend",
-      "framework": "angular"
-    },
-    "backend": {
-      "root": "backend",
-      "framework": "node"
+    "experimentalServices": {
+        "frontend": {
+            "root": "frontend",
+            "routePrefix": "/",
+            "framework": "angular"
+        },
+        "backend": {
+            "root": "backend",
+            "routePrefix": "/_/backend"
+        }
     }
-  }
 }
