@@ -22,7 +22,7 @@
           "options": {
             "outputPath": {
               "base": "dist",
-              "browser": ""
+              "browser": "browser"
             },
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
