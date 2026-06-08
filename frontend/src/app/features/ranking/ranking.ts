@@ -6,7 +6,7 @@ import { AuthService } from '../../core/services/auth.service';
 @Component({
   selector: 'app-ranking',
   standalone: true,
-  imports: [RouterLink],
+  imports: [],
   template: `
     <div class="page">
       <div class="page-header">
