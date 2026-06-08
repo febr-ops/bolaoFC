@@ -10,7 +10,18 @@ dotenv.config();
 const app = express();
 
 app.use(cors({
-  origin: ['http://localhost:4200', 'https://bolao-fc-up5c.vercel.app'],
+  origin: (origin, callback) => {
+    const allowed = [
+      'http://localhost:4200',
+    ];
+    
+    // Aceita qualquer domínio do Vercel ou Railway
+    if (!origin || allowed.includes(origin) || origin.endsWith('.vercel.app') || origin.endsWith('.railway.app')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
