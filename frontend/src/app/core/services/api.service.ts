@@ -6,7 +6,7 @@ import { AuthResponse, LoginRequest, RegisterRequest, Match, Guess, RankingEntry
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private http = inject(HttpClient);
-  private base = 'bolaofc-production-7a96.up.railway.app';
+  private base = 'https://bolaofc-production-7a96.up.railway.app/api';
 
   private get headers(): HttpHeaders {
     const token = localStorage.getItem('token') ?? '';
