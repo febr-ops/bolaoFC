@@ -1,27 +1,32 @@
 import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-ranking',
   standalone: true,
-  imports: [],
+  imports: [FormsModule],
   template: `
     <div class="page">
       <div class="titulo">CLASSIFICAÇÃO DO BOLÃO</div>
 
       <div class="tabela-wrap">
-        <div class="tabela-header">
+        <div class="tabela-header" [class.com-acao]="isAdmin">
           <span class="col-pos">Posição</span>
           <span class="col-nome">Nome de usuário</span>
           <span class="col-pts">Total de pts</span>
+          @if (isAdmin) {
+            <span class="col-acao">Editar</span>
+          }
         </div>
 
         @if (loading) {
           <div class="loading">Carregando...</div>
         } @else {
           @for (entry of ranking; track entry.id; let i = $index) {
-            <div class="tabela-row" [class.eu]="entry.id === currentUserId">
+            <div class="tabela-row" [class.eu]="entry.id === currentUserId" [class.com-acao]="isAdmin">
               <span class="col-pos">
                 @if (i === 0) { 🥇 }
                 @else if (i === 1) { 🥈 }
@@ -37,11 +42,31 @@ import { AuthService } from '../../core/services/auth.service';
                   <em>(sin)</em>
                 }
               </span>
-              <span class="col-pts">{{ entry.points }}</span>
+
+              @if (editingId === entry.id) {
+                <span class="col-pts editing">
+                  <input type="number" [(ngModel)]="editingPoints" class="pts-input" />
+                </span>
+                <span class="col-acao">
+                  <button class="btn-save" (click)="savePoints(entry.id)">✓</button>
+                  <button class="btn-cancel" (click)="cancelEdit()">✕</button>
+                </span>
+              } @else {
+                <span class="col-pts">{{ entry.points }}</span>
+                @if (isAdmin) {
+                  <span class="col-acao">
+                    <button class="btn-edit" (click)="startEdit(entry)">✏️</button>
+                  </span>
+                }
+              }
             </div>
           }
         }
       </div>
+
+      @if (successMsg) {
+        <div class="toast">{{ successMsg }}</div>
+      }
     </div>
   `,
   styles: [`
@@ -78,6 +103,8 @@ import { AuthService } from '../../core/services/auth.service';
       text-transform: uppercase;
       letter-spacing: .05em;
       border-bottom: 1px solid #374151;
+
+      &.com-acao { grid-template-columns: 80px 1fr 100px 70px; }
     }
 
     .tabela-row {
@@ -90,14 +117,15 @@ import { AuthService } from '../../core/services/auth.service';
 
       &:last-child { border-bottom: none; }
       &:hover { background: #1f2937; }
+      &.com-acao { grid-template-columns: 80px 1fr 100px 70px; }
 
       &.eu {
-        background: #f97316;
-        &:hover { background: #ea6c0a; }
-
+        background: #c2550f;
+        &:hover { background: #a8490d; }
         .col-pts { color: #fff; }
         .col-pos { color: #fff; }
         .col-nome { color: #fff; em { color: #fff; opacity: .8; } }
+        .btn-edit { filter: brightness(0) invert(1); opacity: 1; }
       }
     }
 
@@ -119,7 +147,8 @@ import { AuthService } from '../../core/services/auth.service';
       em {
         font-style: normal;
         font-size: .75rem;
-        color: #9ca3af;
+        color: #fff;
+        opacity: .8;
         margin-left: 4px;
       }
     }
@@ -129,6 +158,16 @@ import { AuthService } from '../../core/services/auth.service';
       font-weight: 700;
       color: #f97316;
       font-size: .95rem;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .col-acao {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
     }
 
     .avatar {
@@ -144,23 +183,89 @@ import { AuthService } from '../../core/services/auth.service';
       flex-shrink: 0;
     }
 
+    .pts-input {
+      width: 64px;
+      background: #374151;
+      border: 1px solid #f97316;
+      border-radius: 4px;
+      color: #fff;
+      padding: 4px 8px;
+      font-size: .9rem;
+      text-align: center;
+      outline: none;
+    }
+
+    .btn-edit {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      opacity: .6;
+      transition: opacity .15s;
+      &:hover { opacity: 1; }
+    }
+
+    .btn-save {
+      background: #22c55e;
+      border: none;
+      border-radius: 4px;
+      color: #fff;
+      font-weight: 700;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: .85rem;
+    }
+
+    .btn-cancel {
+      background: #ef4444;
+      border: none;
+      border-radius: 4px;
+      color: #fff;
+      font-weight: 700;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: .85rem;
+    }
+
     .loading {
       text-align: center;
       color: #9ca3af;
       padding: 40px;
+    }
+
+    .toast {
+      margin-top: 16px;
+      background: #22c55e;
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: 600;
     }
   `]
 })
 export class RankingComponent implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
+  private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
 
   ranking: any[] = [];
   loading = true;
-  currentUserId = this.auth.userId;
+  editingId: string | null = null;
+  editingPoints = 0;
+  successMsg = '';
 
-  private colors = ['#e74c3c','#3498db','#2ecc71','#9b59b6','#f39c12','#1abc9c','#e67e22','#e91e63'];
+   get currentUserId(): string {
+    return this.auth.userId;
+  }
+  
+  get isAdmin(): boolean {
+    return this.auth.isAdmin;
+  }
+
+  // Cores azul/roxo/ciano — sem laranja para não conflitar
+  private colors = ['#3b82f6','#8b5cf6','#06b6d4','#10b981','#6366f1','#0ea5e9','#7c3aed','#059669'];
 
   getColor(name: string): string {
     let hash = 0;
@@ -169,6 +274,10 @@ export class RankingComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.loadRanking();
+  }
+
+  loadRanking() {
     this.api.getRanking().subscribe({
       next: (data: any) => {
         this.ranking = data;
@@ -176,6 +285,34 @@ export class RankingComponent implements OnInit {
         this.cdr.detectChanges();
       },
       error: () => { this.loading = false; }
+    });
+  }
+
+  startEdit(entry: any) {
+    this.editingId = entry.id;
+    this.editingPoints = entry.points;
+  }
+
+  cancelEdit() {
+    this.editingId = null;
+  }
+
+  savePoints(userId: string) {
+    const token = localStorage.getItem('token') ?? '';
+    const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
+    const base = (this.api as any)['base'];
+
+    this.http.patch(`${base}/admin/users/${userId}/points`,
+      { points: this.editingPoints },
+      { headers }
+    ).subscribe({
+      next: () => {
+        this.editingId = null;
+        this.successMsg = 'Pontuação atualizada!';
+        this.loadRanking(); // recarrega e já vem ordenado do backend
+        setTimeout(() => { this.successMsg = ''; this.cdr.detectChanges(); }, 3000);
+      },
+      error: () => alert('Erro ao salvar pontuação.')
     });
   }
 }
