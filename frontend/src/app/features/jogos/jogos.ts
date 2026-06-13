@@ -177,11 +177,11 @@ const FASES = [
                 <span class="elim-rodada-label">{{ nomeRodada(jogo) }}</span>
               </div>
 
-              <!-- Cidade + Data/hora centralizados na mesma linha -->
+              <!-- CORRIGIDO 1: tenta venue, location, area.name, city -->
               <div class="elim-meta">
                 <div class="elim-meta-inner">
-                  @if (jogo.venue) {
-                    <span class="elim-estadio">{{ jogo.venue }}</span>
+                  @if (getCidade(jogo)) {
+                    <span class="elim-estadio">{{ getCidade(jogo) }}</span>
                   }
                   <span class="elim-data">{{ formatarDataLonga(jogo.utcDate) }}</span>
                 </div>
@@ -393,7 +393,6 @@ const FASES = [
        FASES ELIMINATÓRIAS
     ═══════════════════════════════ */
 
-    /* Título "Tabela" acima dos cards */
     .elim-titulo-tabela {
       font-size: 1.2rem;
       font-weight: 900;
@@ -416,7 +415,6 @@ const FASES = [
       &--played { border-color: #374151; }
     }
 
-    /* Label da rodada com linhas laterais */
     .elim-rodada-wrap {
       display: flex; align-items: center; gap: 10px;
       margin-bottom: 10px;
@@ -429,7 +427,6 @@ const FASES = [
       text-transform: uppercase; letter-spacing: .1em; white-space: nowrap;
     }
 
-    /* Cidade + Data/hora: wrapper centra o bloco, inner alinha cidade+data lado a lado */
     .elim-meta {
       display: flex;
       justify-content: center;
@@ -449,7 +446,6 @@ const FASES = [
       font-size: .82rem; color: #9ca3af; font-weight: 500;
     }
 
-    /* Confronto: time — placar — time, tudo centralizado */
     .elim-confronto {
       display: grid;
       grid-template-columns: 1fr auto 1fr;
@@ -458,21 +454,18 @@ const FASES = [
       gap: 8px;
     }
 
-    /* Casa: nome à esquerda, escudo à direita — tudo empurrado para o centro */
     .elim-time {
       display: flex; align-items: center; gap: 10px; width: 100%;
       &--home { justify-content: flex-end; flex-direction: row; text-align: right; }
       &--away { justify-content: flex-start; flex-direction: row; text-align: left; }
     }
 
-    /* Container do escudo — sem fundo, sem círculo */
     .elim-escudo {
       flex-shrink: 0; width: 42px; height: 42px;
       display: flex; align-items: center; justify-content: center;
       img { width: 36px; height: 36px; object-fit: contain; }
     }
 
-    /* Shield SVG placeholder */
     .elim-shield {
       width: 36px; height: 42px;
     }
@@ -482,7 +475,6 @@ const FASES = [
       &--vencedor { color: #f9fafb; }
     }
 
-    /* Bloco do placar central */
     .elim-vs {
       display: flex; align-items: center; gap: 6px; justify-content: center; min-width: 60px;
     }
@@ -520,6 +512,11 @@ export class JogosComponent implements OnInit, OnDestroy {
   calcAproveitamento(time: any): string {
     if (!time.jogos) return '0';
     return Math.round((time.pontos / (time.jogos * 3)) * 100).toString();
+  }
+
+  // CORREÇÃO 1: busca cidade em múltiplos campos possíveis da API
+  getCidade(jogo: any): string {
+    return jogo.venue ?? jogo.location ?? jogo.area?.name ?? jogo.city ?? '';
   }
 
   private traducoes: Record<string, string> = {
@@ -592,6 +589,7 @@ export class JogosComponent implements OnInit, OnDestroy {
     return idx >= 0 && fase.length > 1 ? `${label} ${idx + 1}` : label;
   }
 
+  // CORREÇÃO 2: regex corrigido para "1º E", "3º ABCDF" (espaço opcional após º)
   nomeTimeElim(team: any): string {
     if (!team?.name) return '?';
     const n = (team.name as string).trim();
@@ -604,11 +602,11 @@ export class JogosComponent implements OnInit, OnDestroy {
     const lmMatch = n.match(/^Loser(?:\s+of)?\s+(?:Match\s+)?(\w+)$/i);
     if (lmMatch) return `Perd. J${lmMatch[1]}`;
 
-    // Já formatado como "1º E", "3º ABCDF", "2A" etc — mantém
-    if (/^[123][oº°]?\s/i.test(n) || /^venc\./i.test(n)) return n;
+    // Aceita "1º E", "3º ABCDF", "2A" etc — \s* em vez de \s (espaço opcional)
+    if (/^[123][oOºO°]?\s*[A-Z]/i.test(n) || /^venc\./i.test(n) || /^perd\./i.test(n)) return n;
 
-    // Nome real → traduz
-    return this.traduzirTime(n);
+    // Nome real → traduz; fallback para nome original se não houver tradução
+    return this.traduzirTime(n) ?? n;
   }
 
   temPlacar(jogo: any): boolean {
