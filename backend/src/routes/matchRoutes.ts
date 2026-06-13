@@ -57,12 +57,24 @@ router.get('/tabela/:group', async (req: Request, res: Response) => {
           home.jogos++;
           away.jogos++;
 
+          // Adiciona gols
+          const gpHome = m.score.fullTime.home ?? 0;
+          const gpAway = m.score.fullTime.away ?? 0;
+          home.gp = (home.gp ?? 0) + gpHome;
+          home.gc = (home.gc ?? 0) + gpAway;
+          away.gp = (away.gp ?? 0) + gpAway;
+          away.gc = (away.gc ?? 0) + gpHome;
+
+          // Resultado do último jogo
           if (m.score.winner === 'HOME_TEAM') {
             home.vitorias++; home.pontos += 3; away.derrotas++;
+            home.ultimoJogo = 'vitoria'; away.ultimoJogo = 'derrota';
           } else if (m.score.winner === 'AWAY_TEAM') {
             away.vitorias++; away.pontos += 3; home.derrotas++;
+            away.ultimoJogo = 'vitoria'; home.ultimoJogo = 'derrota';
           } else {
             home.empates++; home.pontos += 1; away.empates++; away.pontos += 1;
+            home.ultimoJogo = 'empate'; away.ultimoJogo = 'empate';
           }
         }
       }
